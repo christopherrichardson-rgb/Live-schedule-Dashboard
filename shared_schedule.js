@@ -3,6 +3,39 @@
   const SCHEDULE_FILE_NAME='live-schedule.json';
   const GIST_ID_PATTERN=/^[0-9a-f]{20,64}$/i;
 
+  function backendApiBaseUrl(value){
+    const reference=String(value||'').trim();
+    if(!reference)return '';
+    let url;
+    try{
+      url=new URL(reference);
+    }catch(error){
+      throw Error('Enter a valid HTTPS backend API base URL.');
+    }
+    if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/'&&url.pathname!==''){
+      throw Error('Enter a backend API base URL without credentials, a path, query parameters, or a fragment.');
+    }
+    return url.origin;
+  }
+
+  function backendUrl(baseUrl,path){
+    const base=backendApiBaseUrl(baseUrl);
+    if(!base)throw Error('Enter a backend API base URL first.');
+    return base+path;
+  }
+
+  function backendScheduleUrl(baseUrl){
+    return backendUrl(baseUrl,'/api/schedule');
+  }
+
+  function backendLoginUrl(baseUrl){
+    return backendUrl(baseUrl,'/api/admin/login');
+  }
+
+  function backendAdminScheduleUrl(baseUrl){
+    return backendUrl(baseUrl,'/api/admin/schedule');
+  }
+
   function gistIdFromReference(value){
     const reference=String(value||'').trim();
     if(GIST_ID_PATTERN.test(reference))return reference;
@@ -61,14 +94,24 @@
     }
   }
 
+  async function fetchBackendSchedule(baseUrl,fetchFn){
+    const request=fetchFn||root.fetch;
+    if(typeof request!=='function')throw Error('This browser cannot request the shared schedule.');
+    const payload=await responseJson(await request(backendScheduleUrl(baseUrl),{headers:{Accept:'application/json'},cache:'no-store'}),'The schedule backend could not load the shared schedule');
+    if(!payload||typeof payload!=='object'||!Array.isArray(payload.rows))throw Error('The schedule backend returned an invalid schedule response.');
+    return payload.rows;
+  }
+
   function cardViewUrl(path,options){
     const settings=options||{},query=new URLSearchParams({team:settings.team});
     if(settings.search)query.set('search',settings.search);
     (settings.roles||[]).forEach(role=>query.append('role',role));
+    if(settings.api)query.set('api',backendApiBaseUrl(settings.api));
+    if(settings.api&&!query.get('api'))throw Error('The saved backend API base URL is invalid.');
     if(settings.gist)query.set('gist',gistIdFromReference(settings.gist));
     if(settings.gist&&!query.get('gist'))throw Error('The saved shared schedule reference is invalid.');
     return path+'?'+query.toString();
   }
 
-  root.SharedSchedule={GIST_API_ORIGIN,SCHEDULE_FILE_NAME,gistIdFromReference,gistApiUrl,fetchGistSchedule,cardViewUrl};
+  root.SharedSchedule={GIST_API_ORIGIN,SCHEDULE_FILE_NAME,backendApiBaseUrl,backendScheduleUrl,backendLoginUrl,backendAdminScheduleUrl,gistIdFromReference,gistApiUrl,fetchBackendSchedule,fetchGistSchedule,cardViewUrl};
 })(typeof window!=='undefined'?window:globalThis);

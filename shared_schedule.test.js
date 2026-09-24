@@ -32,6 +32,11 @@ assert.equal(params.get('gist'),gistId);
 assert.equal(params.has('date'),false);
 assert.equal(params.has('token'),false);
 
+const dashboardLink=shared.dashboardShareUrl('https://dashboard.test/index.html?token=secret#private',backendBase+'/');
+assert.equal(dashboardLink,'https://dashboard.test/index.html?api=https%3A%2F%2Fschedule.example.test');
+assert.doesNotMatch(dashboardLink,/token|secret|private/);
+assert.throws(()=>shared.dashboardShareUrl('https://dashboard.test/index.html','https://user:password@schedule.example.test'),/without credentials/);
+
 (async()=>{
   const backendRows=await shared.fetchBackendSchedule(backendBase,async(url,options)=>{
     assert.equal(url,backendBase+'/api/schedule');
@@ -69,12 +74,18 @@ assert.equal(params.has('token'),false);
 
   const cardView=fs.readFileSync('card_view.html','utf8');
   const unattendedDisplay=fs.readFileSync('index_display.html','utf8');
+  const dashboard=fs.readFileSync('dashboard.js','utf8');
   assert.match(cardView,/SharedSchedule\.fetchBackendSchedule\(backendSource\)/);
   assert.match(cardView,/SharedSchedule\.fetchBackendSafetyBadges\(backendSource\)/);
   assert.match(cardView,/SharedSchedule\.fetchGistSchedule\(sharedSource\)/);
   assert.match(unattendedDisplay,/SharedSchedule\.fetchBackendSchedule\(backendSource\)/);
   assert.match(unattendedDisplay,/SharedSchedule\.fetchBackendSafetyBadges\(backendSource\)/);
   assert.match(unattendedDisplay,/SharedSchedule\.fetchGistSchedule\(sharedSource\)/);
+  assert.match(dashboard,/SharedSchedule\.backendApiBaseUrl\(reference\)/);
+  assert.match(dashboard,/localStorage\.setItem\(SHARED_BACKEND_API_BASE_KEY,base\)/);
+  assert.match(dashboard,/SharedSchedule\.dashboardShareUrl\(window\.location\.href,base\)/);
+  assert.match(dashboard,/sharedBackendUrlError='The dashboard link has an invalid backend API base URL/);
+  assert.match(dashboard,/initialiseSharedBackendFromUrl\(\);[\s\S]*refreshLiveRows\(\);/);
   assert.doesNotMatch(cardView,/params\.get\('token'\)/);
   assert.doesNotMatch(unattendedDisplay,/params\.get\('token'\)/);
   assert.doesNotMatch(cardView,/Authorization/);

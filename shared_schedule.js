@@ -157,5 +157,12 @@
     return path+'?'+query.toString();
   }
 
-  root.SharedSchedule={GIST_API_ORIGIN,SCHEDULE_FILE_NAME,backendApiBaseUrl,backendScheduleUrl,backendLoginUrl,backendAdminScheduleUrl,backendSafetyBadgesUrl,backendAdminSafetyBadgesUrl,gistIdFromReference,gistApiUrl,fetchBackendSchedule,fetchBackendSafetyBadges,fetchGistSchedule,normaliseSafetyBadges,safetyBadgesFor,cardViewUrl};
+  function dashboardShareUrl(location,baseUrl){
+    const dashboardUrl=new URL(String(location));
+    if(dashboardUrl.protocol!=='http:'&&dashboardUrl.protocol!=='https:')throw Error('Open the dashboard from an HTTP or HTTPS URL before creating a share link.');
+    const query=new URLSearchParams({api:backendApiBaseUrl(baseUrl)});
+    return dashboardUrl.origin+dashboardUrl.pathname+'?'+query.toString();
+  }
+
+  root.SharedSchedule={GIST_API_ORIGIN,SCHEDULE_FILE_NAME,backendApiBaseUrl,backendScheduleUrl,backendLoginUrl,backendAdminScheduleUrl,backendSafetyBadgesUrl,backendAdminSafetyBadgesUrl,gistIdFromReference,gistApiUrl,fetchBackendSchedule,fetchBackendSafetyBadges,fetchGistSchedule,normaliseSafetyBadges,safetyBadgesFor,cardViewUrl,dashboardShareUrl};
 })(typeof window!=='undefined'?window:globalThis);

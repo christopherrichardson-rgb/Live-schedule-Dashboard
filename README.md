@@ -14,6 +14,14 @@ The link has no token and no date, so the same bookmarked link receives later up
 
 `index_display.html?api=https%3A%2F%2Fschedule.example.com`
 
+## Sharing the full dashboard
+
+To let another PC open the complete dashboard without entering an API URL or signing in, save the shared backend API base in **Shared schedule backend**, then select **Copy dashboard link**. The copied URL is based on the current dashboard page and has exactly one query parameter:
+
+`https://dashboard.example.com/?api=https%3A%2F%2Fschedule.example.com`
+
+Opening that link validates and canonicalizes the HTTPS API base, saves it in that browser's `localStorage` for later visits, and immediately loads public `GET {baseUrl}/api/schedule`. It contains no JWT, username, password, or other credentials. An invalid `api` value is ignored and the browser continues with its configured backend, Gist, and static-schedule fallback behavior.
+
 The backend API response is `{ version, updated_at, rows }`. The display pages use the backend first, then an optional public Gist fallback, then `schedule.json`. They do not send authentication headers or credentials.
 
 The backend must allow the GitHub Pages origin and the `Authorization` and `Content-Type` request headers through CORS. Removing the backend connection in the dashboard removes its API base and admin session from that browser only.

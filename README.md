@@ -26,6 +26,12 @@ The backend API response is `{ version, updated_at, rows }`. The display pages u
 
 The backend must allow the GitHub Pages origin and the `Authorization` and `Content-Type` request headers through CORS. Removing the backend connection in the dashboard removes its API base and admin session from that browser only.
 
+## Shared safety badges
+
+Uploading a safety workbook still saves the normalized first-aid, fire-marshal, and working-at-height mappings in the operator browser. When the shared backend is configured and the operator is signed in, the dashboard also atomically publishes `{ badges }` to `PUT {baseUrl}/api/admin/safety-badges`; publish success or failure is shown without discarding the local result. **Clear safety badges** publishes the corresponding empty mapping when signed in and explicitly warns if that shared clear fails.
+
+Card and unattended display links with `api=<public-base-url>` load `GET {baseUrl}/api/safety-badges` alongside the public schedule API and render the same three safety badges. Badge reads are public and never include an admin token; if the badge endpoint is unavailable, each page retains its local/static behavior.
+
 ## Optional public Gist fallback
 
 If the backend is not configured, the existing **Public Gist fallback** can publish the normalized schedule to a public GitHub Gist. It requires a fine-grained personal access token with **Gists: Read and write**, or a classic token with the **`gist`** scope; that token remains only in the operator's browser. Display links may include `gist=<public-gist-id>` as a credential-free fallback.

@@ -36,6 +36,14 @@
     return backendUrl(baseUrl,'/api/admin/schedule');
   }
 
+  function backendSafetyBadgesUrl(baseUrl){
+    return backendUrl(baseUrl,'/api/safety-badges');
+  }
+
+  function backendAdminSafetyBadgesUrl(baseUrl){
+    return backendUrl(baseUrl,'/api/admin/safety-badges');
+  }
+
   function gistIdFromReference(value){
     const reference=String(value||'').trim();
     if(GIST_ID_PATTERN.test(reference))return reference;
@@ -102,6 +110,42 @@
     return payload.rows;
   }
 
+  function normaliseSafetyBadges(value){
+    if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Safety badges must be an object.');
+    const normaliseNames=(names,label)=>{
+      if(!Array.isArray(names))throw Error('Safety badges must include a '+label+' list.');
+      return [...new Set(names.map(name=>String(name||'').trim()).filter(Boolean))];
+    };
+    return {
+      firstAid:normaliseNames(value.firstAid,'first aid'),
+      fireMarshal:normaliseNames(value.fireMarshal,'fire marshal'),
+      workingAtHeight:normaliseNames(value.workingAtHeight,'working at height')
+    };
+  }
+
+  function safetyNameKeys(value){
+    const tokens=[...new Set(String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean))],keys=[];
+    for(let left=0;left<tokens.length;left++)for(let right=left+1;right<tokens.length;right++)keys.push([tokens[left],tokens[right]].sort().join('|'));
+    return keys;
+  }
+
+  function safetyBadgesFor(badges,name){
+    const normalised=normaliseSafetyBadges(badges),keys=new Set(safetyNameKeys(name));
+    return [
+      ['firstAid','first-aid','First aider','✚'],
+      ['fireMarshal','fire-marshal','Fire marshal','🔥'],
+      ['workingAtHeight','working-at-height','Working at height (scissor lift)','↕']
+    ].filter(([property])=>normalised[property].some(safetyName=>safetyNameKeys(safetyName).some(key=>keys.has(key)))).map(([,className,label,symbol])=>({className,label,symbol}));
+  }
+
+  async function fetchBackendSafetyBadges(baseUrl,fetchFn){
+    const request=fetchFn||root.fetch;
+    if(typeof request!=='function')throw Error('This browser cannot request the shared safety badges.');
+    const payload=await responseJson(await request(backendSafetyBadgesUrl(baseUrl),{headers:{Accept:'application/json'},cache:'no-store'}),'The schedule backend could not load the shared safety badges');
+    if(!payload||typeof payload!=='object'||!payload.badges)throw Error('The schedule backend returned an invalid safety badge response.');
+    return normaliseSafetyBadges(payload.badges);
+  }
+
   function cardViewUrl(path,options){
     const settings=options||{},query=new URLSearchParams({team:settings.team});
     if(settings.search)query.set('search',settings.search);
@@ -120,5 +164,5 @@
     return dashboardUrl.origin+dashboardUrl.pathname+'?'+query.toString();
   }
 
-  root.SharedSchedule={GIST_API_ORIGIN,SCHEDULE_FILE_NAME,backendApiBaseUrl,backendScheduleUrl,backendLoginUrl,backendAdminScheduleUrl,gistIdFromReference,gistApiUrl,fetchBackendSchedule,fetchGistSchedule,cardViewUrl,dashboardShareUrl};
+  root.SharedSchedule={GIST_API_ORIGIN,SCHEDULE_FILE_NAME,backendApiBaseUrl,backendScheduleUrl,backendLoginUrl,backendAdminScheduleUrl,backendSafetyBadgesUrl,backendAdminSafetyBadgesUrl,gistIdFromReference,gistApiUrl,fetchBackendSchedule,fetchBackendSafetyBadges,fetchGistSchedule,normaliseSafetyBadges,safetyBadgesFor,cardViewUrl,dashboardShareUrl};
 })(typeof window!=='undefined'?window:globalThis);

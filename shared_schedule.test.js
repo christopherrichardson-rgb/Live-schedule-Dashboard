@@ -16,6 +16,8 @@ assert.equal(shared.backendApiBaseUrl(backendBase+'/'),backendBase);
 assert.equal(shared.backendScheduleUrl(backendBase),backendBase+'/api/schedule');
 assert.equal(shared.backendLoginUrl(backendBase),backendBase+'/api/admin/login');
 assert.equal(shared.backendAdminScheduleUrl(backendBase),backendBase+'/api/admin/schedule');
+assert.equal(shared.backendSafetyBadgesUrl(backendBase),backendBase+'/api/safety-badges');
+assert.equal(shared.backendAdminSafetyBadgesUrl(backendBase),backendBase+'/api/admin/safety-badges');
 assert.throws(()=>shared.backendApiBaseUrl('http://schedule.example.test'),/without credentials/);
 assert.throws(()=>shared.backendApiBaseUrl('https://admin:secret@schedule.example.test'),/without credentials/);
 assert.throws(()=>shared.backendApiBaseUrl('https://schedule.example.test/api'),/without credentials/);
@@ -44,6 +46,17 @@ assert.throws(()=>shared.dashboardShareUrl('https://dashboard.test/index.html','
   });
   assert.equal(backendRows[0].name,'Alex');
 
+  const badges=await shared.fetchBackendSafetyBadges(backendBase,async(url,options)=>{
+    assert.equal(url,backendBase+'/api/safety-badges');
+    assert.equal(options.cache,'no-store');
+    assert.equal(options.headers.Accept,'application/json');
+    assert.equal(options.headers.Authorization,undefined);
+    return {ok:true,status:200,json:async()=>({version:2,updated_at:'2026-09-24T09:00:00Z',badges:{firstAid:['Alex Smith','Alex Smith'],fireMarshal:['Sam Jones'],workingAtHeight:[]}})};
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(badges)),{firstAid:['Alex Smith'],fireMarshal:['Sam Jones'],workingAtHeight:[]});
+  assert.deepEqual(JSON.parse(JSON.stringify(shared.safetyBadgesFor(badges,'Smith, Alex'))),[{className:'first-aid',label:'First aider',symbol:'✚'}]);
+  assert.throws(()=>shared.normaliseSafetyBadges({firstAid:[],fireMarshal:[]}),/working at height/);
+
   const rows=await shared.fetchGistSchedule(gistId,async url=>{
     assert.equal(url,'https://api.github.com/gists/'+gistId);
     return {ok:true,status:200,json:async()=>({files:{'live-schedule.json':{content:'[{"name":"Alex","date":"2026-09-07"}]'}}})};
@@ -63,8 +76,10 @@ assert.throws(()=>shared.dashboardShareUrl('https://dashboard.test/index.html','
   const unattendedDisplay=fs.readFileSync('index_display.html','utf8');
   const dashboard=fs.readFileSync('dashboard.js','utf8');
   assert.match(cardView,/SharedSchedule\.fetchBackendSchedule\(backendSource\)/);
+  assert.match(cardView,/SharedSchedule\.fetchBackendSafetyBadges\(backendSource\)/);
   assert.match(cardView,/SharedSchedule\.fetchGistSchedule\(sharedSource\)/);
   assert.match(unattendedDisplay,/SharedSchedule\.fetchBackendSchedule\(backendSource\)/);
+  assert.match(unattendedDisplay,/SharedSchedule\.fetchBackendSafetyBadges\(backendSource\)/);
   assert.match(unattendedDisplay,/SharedSchedule\.fetchGistSchedule\(sharedSource\)/);
   assert.match(dashboard,/SharedSchedule\.backendApiBaseUrl\(reference\)/);
   assert.match(dashboard,/localStorage\.setItem\(SHARED_BACKEND_API_BASE_KEY,base\)/);
@@ -75,6 +90,11 @@ assert.throws(()=>shared.dashboardShareUrl('https://dashboard.test/index.html','
   assert.doesNotMatch(unattendedDisplay,/params\.get\('token'\)/);
   assert.doesNotMatch(cardView,/Authorization/);
   assert.doesNotMatch(unattendedDisplay,/Authorization/);
+  const dashboard=fs.readFileSync('dashboard.js','utf8');
+  assert.match(dashboard,/backendAdminSafetyBadgesUrl\(base\)/);
+  assert.match(dashboard,/fetchBackendSafetyBadges\(base\)/);
+  assert.match(dashboard,/body:\{badges:SharedSchedule\.normaliseSafetyBadges\(badges\)\}/);
+  assert.match(dashboard,/shared clearing failed/);
 
   const source=new Date(2026,8,8,2,30);
   const shiftDate=new Date(source);

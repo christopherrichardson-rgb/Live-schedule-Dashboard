@@ -75,6 +75,13 @@ assert.throws(()=>shared.dashboardShareUrl('https://dashboard.test/index.html','
   const cardView=fs.readFileSync('card_view.html','utf8');
   const unattendedDisplay=fs.readFileSync('index_display.html','utf8');
   const dashboard=fs.readFileSync('dashboard.js','utf8');
+  const dateValueSource=dashboard.match(/^function dateValue\(value\)\{.+\}$/m);
+  const shiftDateLabelSource=dashboard.match(/^function shiftDateLabel\(value\)\{.+\}$/m);
+  assert.ok(dateValueSource,'The dashboard should normalize shift dates.');
+  assert.ok(shiftDateLabelSource,'The dashboard should format a human-readable shift date.');
+  vm.runInContext(dateValueSource[0],context);
+  vm.runInContext(shiftDateLabelSource[0],context);
+  assert.equal(context.shiftDateLabel('07/09/2026'),'Mon, 7 Sept 2026');
   assert.match(cardView,/SharedSchedule\.fetchBackendSchedule\(backendSource\)/);
   assert.match(cardView,/SharedSchedule\.fetchBackendSafetyBadges\(backendSource\)/);
   assert.match(cardView,/SharedSchedule\.fetchGistSchedule\(sharedSource\)/);
@@ -95,6 +102,10 @@ assert.throws(()=>shared.dashboardShareUrl('https://dashboard.test/index.html','
   assert.match(dashboard,/fetchBackendSafetyBadges\(base\)/);
   assert.match(dashboard,/body:\{badges:SharedSchedule\.normaliseSafetyBadges\(badges\)\}/);
   assert.match(dashboard,/shared clearing failed/);
+  assert.match(dashboard,/<div class="shift-date"><span>Shift date<\/span><time datetime="/);
+  assert.match(dashboard,/shiftDateLabel\(row\.date\)/);
+  assert.doesNotMatch(cardView,/shift-date/);
+  assert.doesNotMatch(unattendedDisplay,/shift-date/);
 
   const source=new Date(2026,8,8,2,30);
   const shiftDate=new Date(source);

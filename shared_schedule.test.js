@@ -86,11 +86,11 @@ assert.throws(()=>shared.dashboardShareUrl('https://dashboard.test/index.html','
   assert.match(dashboard,/SharedSchedule\.dashboardShareUrl\(window\.location\.href,base\)/);
   assert.match(dashboard,/sharedBackendUrlError='The dashboard link has an invalid backend API base URL/);
   assert.match(dashboard,/initialiseSharedBackendFromUrl\(\);[\s\S]*refreshLiveRows\(\);/);
+  assert.doesNotMatch(dashboard,/Public Gist|sharedGist|gistRequest|operatorToken|api\.github\.com/i);
   assert.doesNotMatch(cardView,/params\.get\('token'\)/);
   assert.doesNotMatch(unattendedDisplay,/params\.get\('token'\)/);
   assert.doesNotMatch(cardView,/Authorization/);
   assert.doesNotMatch(unattendedDisplay,/Authorization/);
-  const dashboard=fs.readFileSync('dashboard.js','utf8');
   assert.match(dashboard,/backendAdminSafetyBadgesUrl\(base\)/);
   assert.match(dashboard,/fetchBackendSafetyBadges\(base\)/);
   assert.match(dashboard,/body:\{badges:SharedSchedule\.normaliseSafetyBadges\(badges\)\}/);

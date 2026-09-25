@@ -26,6 +26,10 @@ The backend API response is `{ version, updated_at, rows }`. The shared backend 
 
 The backend must allow the GitHub Pages origin and the `Authorization` and `Content-Type` request headers through CORS. Removing the backend connection in the dashboard removes its API base and admin session from that browser only.
 
+## Monthly hours report
+
+Select a **Team** (DC or CDC) and **Report month** on the dashboard, then choose **Download monthly hours report**. The CSV summarizes that team and calendar month by work role with scheduled hours, shift count, and coworker count, plus a total row. Name, role, period, date-view, and other dashboard filters do not change this report.
+
 ## Shared safety badges
 
 Uploading a safety workbook still saves the normalized first-aid, fire-marshal, and working-at-height mappings in the operator browser. When the shared backend is configured and the operator is signed in, the dashboard also atomically publishes `{ badges }` to `PUT {baseUrl}/api/admin/safety-badges`; publish success or failure is shown without discarding the local result. **Clear safety badges** publishes the corresponding empty mapping when signed in and explicitly warns if that shared clear fails.

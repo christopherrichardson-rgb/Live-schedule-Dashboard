@@ -20,9 +20,9 @@ To let another PC open the complete dashboard without entering an API URL or sig
 
 `https://dashboard.example.com/?api=https%3A%2F%2Fschedule.example.com`
 
-Opening that link validates and canonicalizes the HTTPS API base, saves it in that browser's `localStorage` for later visits, and immediately loads public `GET {baseUrl}/api/schedule`. It contains no JWT, username, password, or other credentials. An invalid `api` value is ignored and the browser continues with its configured backend, Gist, and static-schedule fallback behavior.
+Opening that link validates and canonicalizes the HTTPS API base, saves it in that browser's `localStorage` for later visits, and immediately loads public `GET {baseUrl}/api/schedule`. It contains no JWT, username, password, or other credentials. An invalid `api` value is ignored and the browser continues with its configured backend and static-schedule fallback behavior.
 
-The backend API response is `{ version, updated_at, rows }`. The display pages use the backend first, then an optional public Gist fallback, then `schedule.json`. They do not send authentication headers or credentials.
+The backend API response is `{ version, updated_at, rows }`. The shared backend is the supported setup for publishing and displaying schedules. The display pages use the backend first, then `schedule.json`; older external display links that include a public Gist ID remain readable for backward compatibility. They do not send authentication headers or credentials.
 
 The backend must allow the GitHub Pages origin and the `Authorization` and `Content-Type` request headers through CORS. Removing the backend connection in the dashboard removes its API base and admin session from that browser only.
 
@@ -31,7 +31,3 @@ The backend must allow the GitHub Pages origin and the `Authorization` and `Cont
 Uploading a safety workbook still saves the normalized first-aid, fire-marshal, and working-at-height mappings in the operator browser. When the shared backend is configured and the operator is signed in, the dashboard also atomically publishes `{ badges }` to `PUT {baseUrl}/api/admin/safety-badges`; publish success or failure is shown without discarding the local result. **Clear safety badges** publishes the corresponding empty mapping when signed in and explicitly warns if that shared clear fails.
 
 Card and unattended display links with `api=<public-base-url>` load `GET {baseUrl}/api/safety-badges` alongside the public schedule API and render the same three safety badges. Badge reads are public and never include an admin token; if the badge endpoint is unavailable, each page retains its local/static behavior.
-
-## Optional public Gist fallback
-
-If the backend is not configured, the existing **Public Gist fallback** can publish the normalized schedule to a public GitHub Gist. It requires a fine-grained personal access token with **Gists: Read and write**, or a classic token with the **`gist`** scope; that token remains only in the operator's browser. Display links may include `gist=<public-gist-id>` as a credential-free fallback.
